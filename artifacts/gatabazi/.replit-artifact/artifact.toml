@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Gatabazi"
+version = "1.0.0"
+id = "artifacts/gatabazi"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 19206
+
+[services.development]
+run = "pnpm --filter @workspace/gatabazi run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gatabazi", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/gatabazi", "run", "serve" ]
+
+[services.env]
+PORT = "19206"
+BASE_PATH = "/"

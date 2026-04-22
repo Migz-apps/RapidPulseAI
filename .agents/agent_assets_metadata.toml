@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "CrErGpvnM83YIrmldsMVG"
+uri = "file://artifacts/gatabazi/assets/images/icon.png"
+type = "image"
+title = "gatabazi app icon"
