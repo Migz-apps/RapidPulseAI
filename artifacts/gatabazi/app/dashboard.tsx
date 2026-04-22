@@ -78,7 +78,7 @@ export default function Dashboard() {
         <View style={styles.sosWrap}>
           <SosPulse
             silent={silentSos}
-            onTrigger={() => router.push("/incident")}
+            onTrigger={() => router.push("/emergency")}
             labelHold={t("holdSos")}
             labelSending={t("sending")}
           />

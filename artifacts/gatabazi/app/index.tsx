@@ -48,7 +48,7 @@ export default function Launchpad() {
   };
 
   const handleSos = () => {
-    router.push("/incident");
+    router.push("/emergency");
   };
 
   const goPrimary = () => {
@@ -206,7 +206,7 @@ export default function Launchpad() {
               }}
             />
             {!isAuthed ? (
-              <View style={{ height: 10 }}>
+              <View style={{ marginTop: 14 }}>
                 <PrimaryButton
                   variant="ghost"
                   label={t("signIn")}
@@ -217,7 +217,6 @@ export default function Launchpad() {
                 />
               </View>
             ) : null}
-            <View style={{ height: 6 }} />
             <Pressable
               onPress={() => {
                 closeSheet();
@@ -225,7 +224,7 @@ export default function Launchpad() {
               }}
               style={[
                 styles.demoLink,
-                { borderColor: c.border, borderRadius: c.radius },
+                { borderColor: c.border, borderRadius: c.radius, marginTop: 24 },
               ]}
             >
               <Feather name="radio" size={14} color={c.accent} />
@@ -314,12 +313,11 @@ const styles = StyleSheet.create({
   },
   joinSub: { fontFamily: "Inter_400Regular", fontSize: 14, marginTop: 6 },
   demoLink: {
-    marginTop: 12,
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
     justifyContent: "center",
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
   },
   demoText: { fontFamily: "Inter_500Medium", fontSize: 13 },

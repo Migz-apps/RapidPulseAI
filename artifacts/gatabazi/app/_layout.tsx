@@ -32,6 +32,7 @@ function RootLayoutNav() {
       <Stack.Screen name="index" />
       <Stack.Screen name="register" options={{ animation: "slide_from_bottom" }} />
       <Stack.Screen name="dashboard" />
+      <Stack.Screen name="emergency" options={{ animation: "fade" }} />
       <Stack.Screen name="incident" options={{ animation: "fade" }} />
       <Stack.Screen name="triage" options={{ presentation: "modal" }} />
       <Stack.Screen name="volunteer" options={{ presentation: "modal" }} />
