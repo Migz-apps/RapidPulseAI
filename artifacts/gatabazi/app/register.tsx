@@ -37,15 +37,15 @@ export default function Register() {
   const [credUploaded, setCredUploaded] = useState(profile.credentialUploaded);
 
   useEffect(() => {
-    if (step === "phone" && phone.replace(/\D/g, "").length >= 10 && !verifying && !verified) {
-      setVerifying(true);
-      const id = setTimeout(() => {
-        setVerifying(false);
-        setVerified(true);
-        setStep("role");
-      }, 3000);
-      return () => clearTimeout(id);
-    }
+    if (step !== "phone") return;
+    if (phone.replace(/\D/g, "").length < 10) return;
+    if (verifying || verified) return;
+    setVerifying(true);
+    setTimeout(() => {
+      setVerifying(false);
+      setVerified(true);
+      setStep("role");
+    }, 700);
   }, [step, phone, verifying, verified]);
 
   const finish = () => {
