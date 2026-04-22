@@ -42,7 +42,8 @@ export default function Register() {
       const id = setTimeout(() => {
         setVerifying(false);
         setVerified(true);
-      }, 1400);
+        setStep("role");
+      }, 3000);
       return () => clearTimeout(id);
     }
   }, [step, phone, verifying, verified]);

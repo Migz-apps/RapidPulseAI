@@ -115,11 +115,14 @@ export default function Launchpad() {
         />
 
         <View style={{ height: 28 }} />
-        <View
+        <Pressable
+          onPress={() => setSilentSos(!silentSos)}
           style={[
             styles.silentRow,
             { backgroundColor: c.card, borderColor: c.border, borderRadius: 999 },
           ]}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: silentSos }}
         >
           <Feather
             name="shield"
@@ -140,7 +143,7 @@ export default function Launchpad() {
             thumbColor={silentSos ? c.warning : c.background}
             trackColor={{ false: c.border, true: "rgba(255,183,3,0.45)" }}
           />
-        </View>
+        </Pressable>
       </View>
 
       <Pressable
@@ -217,21 +220,6 @@ export default function Launchpad() {
                 />
               </View>
             ) : null}
-            <Pressable
-              onPress={() => {
-                closeSheet();
-                setTimeout(() => router.push("/volunteer"), 220);
-              }}
-              style={[
-                styles.demoLink,
-                { borderColor: c.border, borderRadius: c.radius, marginTop: 24 },
-              ]}
-            >
-              <Feather name="radio" size={14} color={c.accent} />
-              <Text style={[styles.demoText, { color: c.foreground }]}>
-                Preview Life-Saver volunteer call
-              </Text>
-            </Pressable>
           </Animated.View>
         </Pressable>
       ) : null}

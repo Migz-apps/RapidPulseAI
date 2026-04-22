@@ -23,11 +23,17 @@ const HOSPITAL = {
   distance: "2.3 km",
   eta: "6 min",
   phone: "+250788123456",
-  lat: -1.9536,
-  lng: 30.0922,
+  address: "KG 544 St, Kacyiru, Kigali",
 };
 
 const SAMU_NUMBER = "912";
+
+const ROUTE_STEPS = [
+  { dist: "350 m", instr: "Head north on KN 2 Ave" },
+  { dist: "1.1 km", instr: "Turn right onto KG 9 Ave" },
+  { dist: "850 m", instr: "Continue onto KG 11 Ave" },
+  { dist: "Arrive", instr: "King Faisal Hospital on the right" },
+];
 
 const NEARBY_VICTIM = {
   name: "Aline U.",
@@ -35,19 +41,17 @@ const NEARBY_VICTIM = {
   allergies: "Penicillin",
 };
 
-type Stage = "responder" | "hospital";
-
 export default function Incident() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const { t, silentSos } = useApp();
 
-  const [stage, setStage] = useState<Stage>("responder");
   const [showHandshake, setShowHandshake] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const blink = useRef(new Animated.Value(0)).current;
   const heroAnim = useRef(new Animated.Value(0)).current;
+  const dash = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(heroAnim, {
@@ -72,17 +76,22 @@ export default function Incident() {
       ]),
     ).start();
 
-    const tick = setInterval(() => setElapsed((e) => e + 1), 1000);
-    return () => clearInterval(tick);
-  }, [blink, heroAnim]);
+    Animated.loop(
+      Animated.timing(dash, {
+        toValue: 1,
+        duration: 1600,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    ).start();
 
-  useEffect(() => {
-    if (stage === "hospital") {
-      const handshakeTimer = setTimeout(() => setShowHandshake(true), 2400);
-      return () => clearTimeout(handshakeTimer);
-    }
-    return undefined;
-  }, [stage]);
+    const tick = setInterval(() => setElapsed((e) => e + 1), 1000);
+    const handshakeTimer = setTimeout(() => setShowHandshake(true), 2400);
+    return () => {
+      clearInterval(tick);
+      clearTimeout(handshakeTimer);
+    };
+  }, [blink, heroAnim, dash]);
 
   const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const ss = String(elapsed % 60).padStart(2, "0");
@@ -93,21 +102,17 @@ export default function Incident() {
     Linking.openURL(`tel:${HOSPITAL.phone}`).catch(() => {});
   };
 
-  const openMaps = () => {
-    const url = Platform.select({
-      ios: `https://maps.apple.com/?daddr=${HOSPITAL.lat},${HOSPITAL.lng}&dirflg=d`,
-      default: `https://www.google.com/maps/dir/?api=1&destination=${HOSPITAL.lat},${HOSPITAL.lng}&travelmode=driving`,
-    })!;
-    Linking.openURL(url).catch(() => {});
-  };
-
   const callSamu = () => {
     Linking.openURL(`tel:${SAMU_NUMBER}`).catch(() => {});
-    setTimeout(() => router.replace("/"), 400);
   };
 
   const topInset = isWeb ? Math.max(insets.top, 67) : insets.top + 8;
   const accent = silentSos ? c.warning : c.primary;
+
+  const dashTranslate = dash.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 12],
+  });
 
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
@@ -135,212 +140,140 @@ export default function Incident() {
         </Text>
       </View>
 
-      {stage === "responder" ? (
-        <ScrollView
-          contentContainerStyle={{
-            padding: 20,
-            paddingBottom: Math.max(insets.bottom, isWeb ? 40 : 24) + 110,
-            gap: 14,
-          }}
-        >
-          <Text style={[styles.bigTitle, { color: c.foreground }]}>
-            {t("chooseResponder")}
-          </Text>
-          <Text style={[styles.bigSub, { color: c.mutedForeground }]}>
-            {t("emergencyHint")}
-          </Text>
+      <ScrollView
+        contentContainerStyle={{
+          paddingBottom: Math.max(insets.bottom, isWeb ? 40 : 24) + 200,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.mapWrap, { backgroundColor: c.muted }]}>
+          <LinearGradient
+            colors={["rgba(29,53,87,0.12)", "rgba(42,157,143,0.10)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <MapGrid color={c.border} />
 
-          <View style={{ height: 6 }} />
-
-          <Pressable
-            onPress={() => setStage("hospital")}
-            style={({ pressed }) => [
-              styles.responderBtn,
-              {
-                backgroundColor: c.secondary,
-                borderRadius: c.radius + 4,
-                opacity: pressed ? 0.9 : 1,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.responderIcon,
-                { backgroundColor: "rgba(255,255,255,0.18)" },
-              ]}
-            >
-              <Feather name="plus-square" size={24} color="#fff" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.responderTitle}>{t("hospitalResponder")}</Text>
-              <Text style={styles.responderDesc}>
-                {HOSPITAL.name} · {HOSPITAL.distance} · ETA {HOSPITAL.eta}
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={22} color="#fff" />
-          </Pressable>
-
-          <Pressable
-            onPress={callSamu}
-            style={({ pressed }) => [
-              styles.responderBtn,
-              {
-                backgroundColor: c.accent,
-                borderRadius: c.radius + 4,
-                opacity: pressed ? 0.9 : 1,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.responderIcon,
-                { backgroundColor: "rgba(255,255,255,0.18)" },
-              ]}
-            >
-              <Feather name="truck" size={24} color="#fff" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.responderTitle}>{t("samuResponder")}</Text>
-              <Text style={styles.responderDesc}>{t("samuResponderDesc")}</Text>
-            </View>
-            <Feather name="phone-call" size={22} color="#fff" />
-          </Pressable>
-        </ScrollView>
-      ) : (
-        <ScrollView
-          contentContainerStyle={{
-            paddingBottom: Math.max(insets.bottom, isWeb ? 40 : 24) + 110,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={[styles.mapWrap, { backgroundColor: c.muted }]}>
-            <LinearGradient
-              colors={["rgba(29,53,87,0.12)", "rgba(42,157,143,0.08)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <MapGrid color={c.border} />
-            <Animated.View
-              style={[
-                styles.victimMarker,
-                {
+          <View style={[styles.routeWrap]} pointerEvents="none">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <Animated.View
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: i * 22,
+                  top: 0,
+                  width: 14,
+                  height: 4,
+                  borderRadius: 2,
                   backgroundColor: accent,
-                  transform: [{ scale: heroAnim }],
-                },
-              ]}
-            >
-              <View style={[styles.markerInner, { borderColor: "#fff" }]} />
-            </Animated.View>
-            <View style={[styles.hospitalMarker, { backgroundColor: c.accent }]}>
-              <Feather name="plus" size={14} color="#fff" />
-            </View>
-            <View
-              style={[
-                styles.routeLine,
-                { backgroundColor: accent },
-              ]}
-            />
-            <Pressable
-              onPress={openMaps}
-              style={[styles.mapsBtn, { backgroundColor: c.foreground }]}
-              accessibilityLabel={t("openInMaps")}
-            >
-              <Feather name="navigation" size={14} color={c.background} />
-              <Text style={[styles.mapsBtnText, { color: c.background }]}>
-                {t("openInMaps")}
-              </Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.hospitalSection}>
-            <Text style={[styles.hospitalTitle, { color: c.foreground }]}>
-              {HOSPITAL.name}
-            </Text>
-            <Text style={[styles.hospitalDistance, { color: c.mutedForeground }]}>
-              {HOSPITAL.distance} · ETA {HOSPITAL.eta}
-            </Text>
-
-            <Pressable
-              onPress={callHospital}
-              style={({ pressed }) => [
-                styles.callHospitalBtn,
-                {
-                  backgroundColor: c.primary,
-                  borderRadius: c.radius,
-                  opacity: pressed ? 0.9 : 1,
-                },
-              ]}
-            >
-              <Feather name="phone-call" size={18} color="#fff" />
-              <Text style={styles.callHospitalText}>
-                {t("callButton")} {HOSPITAL.name}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={openMaps}
-              style={({ pressed }) => [
-                styles.directionsBtn,
-                {
-                  borderColor: c.border,
-                  borderRadius: c.radius,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-            >
-              <Feather name="map" size={16} color={c.foreground} />
-              <Text style={[styles.directionsText, { color: c.foreground }]}>
-                {t("openInMaps")}
-              </Text>
-            </Pressable>
-          </View>
-
-          {showHandshake ? (
-            <View style={styles.handshakeWrap}>
-              <View
-                style={[
-                  styles.handshakeBar,
-                  { backgroundColor: c.accent },
-                ]}
+                  opacity: 0.85,
+                  transform: [{ translateX: dashTranslate }],
+                }}
               />
-              <View style={styles.handshakeInner}>
-                <View style={styles.handshakeHead}>
-                  <Feather name="users" size={16} color={c.accent} />
-                  <Text style={[styles.handshakeTitle, { color: c.foreground }]}>
-                    {t("victimProfile")}
+            ))}
+          </View>
+
+          <Animated.View
+            style={[
+              styles.victimMarker,
+              {
+                backgroundColor: accent,
+                transform: [{ scale: heroAnim }],
+              },
+            ]}
+          >
+            <View style={[styles.markerInner, { borderColor: "#fff" }]} />
+          </Animated.View>
+
+          <View style={[styles.hospitalMarker, { backgroundColor: c.accent }]}>
+            <Feather name="plus" size={14} color="#fff" />
+          </View>
+
+          <View style={[styles.youPill, { backgroundColor: c.foreground }]}>
+            <Text style={[styles.youPillText, { color: c.background }]}>
+              {t("you") || "You"}
+            </Text>
+          </View>
+          <View style={[styles.hospitalPill, { backgroundColor: c.accent }]}>
+            <Text style={styles.hospitalPillText}>{HOSPITAL.name}</Text>
+          </View>
+
+          <View style={[styles.etaBadge, { backgroundColor: c.foreground }]}>
+            <Feather name="navigation-2" size={12} color={c.background} />
+            <Text style={[styles.etaBadgeText, { color: c.background }]}>
+              {HOSPITAL.distance} · {HOSPITAL.eta}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.hospitalSection}>
+          <Text style={[styles.hospitalTitle, { color: c.foreground }]}>
+            {HOSPITAL.name}
+          </Text>
+          <Text style={[styles.hospitalAddress, { color: c.mutedForeground }]}>
+            {HOSPITAL.address}
+          </Text>
+
+          <View style={{ height: 14 }} />
+          <Text style={[styles.routeHeader, { color: c.foreground }]}>
+            {t("openInMaps") || "Directions"}
+          </Text>
+          <View style={{ height: 6 }} />
+          {ROUTE_STEPS.map((s, i) => (
+            <View key={i} style={styles.routeStep}>
+              <View style={[styles.stepDot, { backgroundColor: accent }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.stepInstr, { color: c.foreground }]}>
+                  {s.instr}
+                </Text>
+                <Text style={[styles.stepDist, { color: c.mutedForeground }]}>
+                  {s.dist}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {showHandshake ? (
+          <View style={styles.handshakeWrap}>
+            <View style={[styles.handshakeBar, { backgroundColor: c.accent }]} />
+            <View style={styles.handshakeInner}>
+              <View style={styles.handshakeHead}>
+                <Feather name="users" size={16} color={c.accent} />
+                <Text style={[styles.handshakeTitle, { color: c.foreground }]}>
+                  {t("victimProfile")}
+                </Text>
+              </View>
+              <Text style={[styles.handshakeName, { color: c.foreground }]}>
+                {NEARBY_VICTIM.name}
+              </Text>
+              <View style={styles.handshakeMetaRow}>
+                <View style={styles.handshakeMetaCol}>
+                  <Text style={[styles.handshakeLabel, { color: c.mutedForeground }]}>
+                    {t("bloodType")}
+                  </Text>
+                  <Text style={[styles.handshakeValue, { color: c.primary }]}>
+                    {NEARBY_VICTIM.bloodType}
                   </Text>
                 </View>
-                <Text style={[styles.handshakeName, { color: c.foreground }]}>
-                  {NEARBY_VICTIM.name}
-                </Text>
-                <View style={styles.handshakeMetaRow}>
-                  <View style={styles.handshakeMetaCol}>
-                    <Text style={[styles.handshakeLabel, { color: c.mutedForeground }]}>
-                      {t("bloodType")}
-                    </Text>
-                    <Text style={[styles.handshakeValue, { color: c.primary }]}>
-                      {NEARBY_VICTIM.bloodType}
-                    </Text>
-                  </View>
-                  <View style={styles.handshakeMetaCol}>
-                    <Text style={[styles.handshakeLabel, { color: c.mutedForeground }]}>
-                      {t("allergies")}
-                    </Text>
-                    <Text style={[styles.handshakeValue, { color: c.foreground }]}>
-                      {NEARBY_VICTIM.allergies}
-                    </Text>
-                  </View>
+                <View style={styles.handshakeMetaCol}>
+                  <Text style={[styles.handshakeLabel, { color: c.mutedForeground }]}>
+                    {t("allergies")}
+                  </Text>
+                  <Text style={[styles.handshakeValue, { color: c.foreground }]}>
+                    {NEARBY_VICTIM.allergies}
+                  </Text>
                 </View>
               </View>
             </View>
-          ) : null}
-        </ScrollView>
-      )}
+          </View>
+        ) : null}
+      </ScrollView>
 
       <View
         style={[
-          styles.bottomBar,
+          styles.actionsBar,
           {
             backgroundColor: c.background,
             borderTopColor: c.border,
@@ -349,27 +282,60 @@ export default function Incident() {
         ]}
       >
         <Pressable
+          onPress={callHospital}
+          style={({ pressed }) => [
+            styles.callBtn,
+            {
+              backgroundColor: c.primary,
+              borderRadius: c.radius,
+              opacity: pressed ? 0.9 : 1,
+            },
+          ]}
+        >
+          <Feather name="phone-call" size={18} color="#fff" />
+          <Text style={styles.callBtnText}>
+            {t("callButton")} {HOSPITAL.name}
+          </Text>
+        </Pressable>
+
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+          <Pressable
+            onPress={callSamu}
+            style={({ pressed }) => [
+              styles.samuBtn,
+              {
+                backgroundColor: c.accent,
+                borderRadius: c.radius,
+                opacity: pressed ? 0.9 : 1,
+              },
+            ]}
+          >
+            <Feather name="truck" size={16} color="#fff" />
+            <Text style={styles.samuBtnText}>{t("ambulanceNumber")}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/triage")}
+            style={[
+              styles.triageBtn,
+              { backgroundColor: c.foreground, borderRadius: c.radius },
+            ]}
+          >
+            <Feather name="camera" size={16} color={c.background} />
+            <Text style={[styles.triageText, { color: c.background }]}>
+              {t("takePhoto")}
+            </Text>
+          </Pressable>
+        </View>
+        <Pressable
           onPress={cancel}
           style={[
             styles.cancelBtn,
             { borderColor: c.border, borderRadius: c.radius },
           ]}
         >
-          <Feather name="x" size={16} color={c.foreground} />
-          <Text style={[styles.cancelText, { color: c.foreground }]}>
+          <Feather name="x" size={14} color={c.mutedForeground} />
+          <Text style={[styles.cancelText, { color: c.mutedForeground }]}>
             {t("cancelSos")}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push("/triage")}
-          style={[
-            styles.triageBtn,
-            { backgroundColor: c.foreground, borderRadius: c.radius },
-          ]}
-        >
-          <Feather name="camera" size={16} color={c.background} />
-          <Text style={[styles.triageText, { color: c.background }]}>
-            {t("takePhoto")}
           </Text>
         </Pressable>
       </View>
@@ -432,53 +398,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 1,
   },
-  bigTitle: { fontFamily: "Inter_700Bold", fontSize: 26, marginTop: 6 },
-  bigSub: { fontFamily: "Inter_400Regular", fontSize: 14, marginTop: 4 },
-  responderBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 18,
-    minHeight: 96,
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  responderIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  responderTitle: {
-    color: "#fff",
-    fontFamily: "Inter_700Bold",
-    fontSize: 17,
-  },
-  responderDesc: {
-    color: "#fff",
-    opacity: 0.9,
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    marginTop: 3,
-  },
   mapWrap: {
-    height: 280,
+    height: 300,
     margin: 16,
     borderRadius: 24,
     overflow: "hidden",
     position: "relative",
   },
+  routeWrap: {
+    position: "absolute",
+    top: "62%",
+    left: "20%",
+    width: 200,
+    height: 4,
+    transform: [{ rotate: "-28deg" }],
+    overflow: "hidden",
+  },
   victimMarker: {
     position: "absolute",
-    top: "55%",
-    left: "32%",
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: "62%",
+    left: "18%",
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -486,73 +428,92 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
-  markerInner: { width: 8, height: 8, borderRadius: 4, borderWidth: 2 },
+  markerInner: { width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
   hospitalMarker: {
     position: "absolute",
-    top: "22%",
-    right: "20%",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: "20%",
+    right: "16%",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
-  routeLine: {
+  youPill: {
     position: "absolute",
-    top: "30%",
-    left: "38%",
-    width: 130,
-    height: 2,
-    transform: [{ rotate: "-32deg" }],
-    opacity: 0.7,
+    top: "62%",
+    left: "8%",
+    transform: [{ translateY: -28 }],
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
   },
-  mapsBtn: {
+  youPillText: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  hospitalPill: {
     position: "absolute",
-    bottom: 12,
-    right: 12,
+    top: "20%",
+    right: "10%",
+    transform: [{ translateY: -22 }],
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    maxWidth: 140,
+  },
+  hospitalPillText: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: 10,
+    letterSpacing: 0.3,
+  },
+  etaBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 999,
   },
-  mapsBtnText: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
-  hospitalSection: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-  },
+  etaBadgeText: { fontFamily: "Inter_700Bold", fontSize: 12 },
+  hospitalSection: { paddingHorizontal: 20, paddingTop: 4 },
   hospitalTitle: { fontFamily: "Inter_700Bold", fontSize: 22 },
-  hospitalDistance: {
-    fontFamily: "Inter_500Medium",
+  hospitalAddress: {
+    fontFamily: "Inter_400Regular",
     fontSize: 13,
     marginTop: 4,
   },
-  callHospitalBtn: {
-    marginTop: 16,
-    minHeight: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  callHospitalText: {
-    color: "#fff",
+  routeHeader: {
     fontFamily: "Inter_700Bold",
-    fontSize: 16,
+    fontSize: 13,
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
-  directionsBtn: {
-    marginTop: 10,
-    minHeight: 48,
+  routeStep: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderWidth: 1,
+    alignItems: "flex-start",
+    gap: 12,
+    paddingVertical: 10,
   },
-  directionsText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  stepInstr: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  stepDist: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
   handshakeWrap: {
-    marginTop: 18,
+    marginTop: 10,
     marginHorizontal: 20,
     flexDirection: "row",
   },
@@ -579,7 +540,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   handshakeValue: { fontFamily: "Inter_700Bold", fontSize: 16 },
-  bottomBar: {
+  actionsBar: {
     position: "absolute",
     bottom: 0,
     left: 0,
@@ -587,26 +548,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     borderTopWidth: 1,
+  },
+  callBtn: {
+    minHeight: 56,
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 10,
   },
-  cancelBtn: {
+  callBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 },
+  samuBtn: {
     flex: 1,
-    minHeight: 52,
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    borderWidth: 1,
   },
-  cancelText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  samuBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
   triageBtn: {
     flex: 1,
-    minHeight: 52,
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
   },
   triageText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  cancelBtn: {
+    marginTop: 10,
+    minHeight: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+  },
+  cancelText: { fontFamily: "Inter_500Medium", fontSize: 13 },
 });
