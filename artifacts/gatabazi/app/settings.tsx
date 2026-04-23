@@ -1,5 +1,7 @@
 import { Feather } from "@expo/vector-icons";
-import { Linking } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import { Alert, Linking } from "react-native";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -54,6 +56,58 @@ export default function Settings() {
   };
 
   const contacts = profile.emergencyContacts || [];
+
+  const isWebPlatform = Platform.OS === "web";
+
+  const showDeniedAlert = (label: string) => {
+    const title = t("permissionBlockedTitle");
+    const msg = t("permissionBlockedBody").replace("{name}", label);
+    if (isWebPlatform) {
+      if (typeof window !== "undefined") window.alert(`${title}\n\n${msg}`);
+      return;
+    }
+    Alert.alert(title, msg, [
+      { text: t("cancel"), style: "cancel" },
+      { text: t("openSettings"), onPress: () => Linking.openSettings().catch(() => {}) },
+    ]);
+  };
+
+  const requestPermission = async (
+    key: "location" | "camera" | "network" | "notifications",
+    label: string,
+    next: boolean,
+  ) => {
+    if (!next) {
+      setPermissions({ [key]: false } as Partial<typeof permissions>);
+      return;
+    }
+    if (isWebPlatform) {
+      if (key === "location" && typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          () => setPermissions({ location: true }),
+          () => showDeniedAlert(label),
+        );
+        return;
+      }
+      setPermissions({ [key]: true } as Partial<typeof permissions>);
+      return;
+    }
+    try {
+      if (key === "location") {
+        const r = await Location.requestForegroundPermissionsAsync();
+        if (r.status === "granted") setPermissions({ location: true });
+        else showDeniedAlert(label);
+      } else if (key === "camera") {
+        const r = await ImagePicker.requestCameraPermissionsAsync();
+        if (r.status === "granted") setPermissions({ camera: true });
+        else showDeniedAlert(label);
+      } else {
+        setPermissions({ [key]: true } as Partial<typeof permissions>);
+      }
+    } catch {
+      showDeniedAlert(label);
+    }
+  };
   const topInset = isWeb ? Math.max(insets.top, 67) : insets.top + 8;
 
   const langLabel =
@@ -314,25 +368,25 @@ export default function Settings() {
             icon="map-pin"
             label={t("location")}
             value={permissions.location}
-            onChange={(v) => setPermissions({ location: v })}
+            onChange={(v) => requestPermission("location", t("location"), v)}
           />
           <PermLine
             icon="camera"
             label={t("camera")}
             value={permissions.camera}
-            onChange={(v) => setPermissions({ camera: v })}
+            onChange={(v) => requestPermission("camera", t("camera"), v)}
           />
           <PermLine
             icon="zap"
             label={t("network")}
             value={permissions.network}
-            onChange={(v) => setPermissions({ network: v })}
+            onChange={(v) => requestPermission("network", t("network"), v)}
           />
           <PermLine
             icon="bell"
             label={t("notifications")}
             value={permissions.notifications}
-            onChange={(v) => setPermissions({ notifications: v })}
+            onChange={(v) => requestPermission("notifications", t("notifications"), v)}
             last
           />
         </Card>
@@ -430,10 +484,12 @@ function PermLine({
 }) {
   const c = useColors();
   return (
-    <View
-      style={[
+    <Pressable
+      onPress={() => onChange(!value)}
+      style={({ pressed }) => [
         styles.permLine,
         last ? null : { borderBottomColor: c.border, borderBottomWidth: 1 },
+        { opacity: pressed ? 0.7 : 1 },
       ]}
     >
       <View style={[styles.permIcon, { backgroundColor: value ? c.accent : c.muted }]}>
@@ -446,7 +502,7 @@ function PermLine({
         thumbColor={value ? c.accent : c.background}
         trackColor={{ false: c.border, true: "rgba(42,157,143,0.45)" }}
       />
-    </View>
+    </Pressable>
   );
 }
 
