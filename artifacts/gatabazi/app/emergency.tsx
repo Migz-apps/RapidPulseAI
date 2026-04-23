@@ -2,7 +2,6 @@ import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import {
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -24,19 +23,13 @@ export default function EmergencyPicker() {
   const { t } = useApp();
   const topInset = isWeb ? Math.max(insets.top, 67) : insets.top + 8;
 
-  const dial = (number: string) => {
-    Linking.openURL(`tel:${number}`).catch(() => {});
-  };
-
   const onSelect = (type: EmergencyType) => {
     if (type === "medical") {
       router.replace("/incident");
     } else if (type === "fire") {
-      dial("111");
-      setTimeout(() => router.replace("/"), 400);
+      router.replace("/fire");
     } else {
-      dial("112");
-      setTimeout(() => router.replace("/"), 400);
+      router.replace("/other");
     }
   };
 

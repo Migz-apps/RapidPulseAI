@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { Linking } from "react-native";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -8,6 +9,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,9 +34,26 @@ export default function Settings() {
     isAuthed,
     permissions,
     setPermissions,
+    addEmergencyContact,
+    removeEmergencyContact,
     signOut,
   } = useApp();
   const [langOpen, setLangOpen] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [cName, setCName] = useState("");
+  const [cPhone, setCPhone] = useState("");
+  const [cRel, setCRel] = useState("");
+
+  const saveContact = () => {
+    if (!cName.trim() || !cPhone.trim()) return;
+    addEmergencyContact({ name: cName.trim(), phone: cPhone.trim(), relation: cRel.trim() });
+    setCName("");
+    setCPhone("");
+    setCRel("");
+    setShowAdd(false);
+  };
+
+  const contacts = profile.emergencyContacts || [];
   const topInset = isWeb ? Math.max(insets.top, 67) : insets.top + 8;
 
   const langLabel =
@@ -148,6 +167,145 @@ export default function Settings() {
               );
             })}
           </View>
+        </Card>
+
+        <Card>
+          <SectionTitle icon="users" label={t("emergencyContacts")} />
+          <Text style={[styles.hint, { color: c.mutedForeground }]}>
+            {t("emergencyContactsHint")}
+          </Text>
+          <View style={{ height: 12 }} />
+          {contacts.length === 0 && !showAdd ? (
+            <Text style={[styles.empty, { color: c.mutedForeground }]}>
+              {t("noContacts")}
+            </Text>
+          ) : null}
+          {contacts.map((ec, idx) => (
+            <View
+              key={ec.id}
+              style={[
+                styles.contactRow,
+                idx === contacts.length - 1
+                  ? null
+                  : { borderBottomColor: c.border, borderBottomWidth: 1 },
+              ]}
+            >
+              <View style={[styles.contactAvatar, { backgroundColor: c.accent }]}>
+                <Text style={styles.contactAvatarText}>
+                  {ec.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.contactName, { color: c.foreground }]}>
+                  {ec.name}
+                </Text>
+                <Text style={[styles.contactMeta, { color: c.mutedForeground }]}>
+                  {ec.phone}
+                  {ec.relation ? ` · ${ec.relation}` : ""}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => Linking.openURL(`tel:${ec.phone}`).catch(() => {})}
+                hitSlop={10}
+                style={[styles.smallBtn, { backgroundColor: c.accent }]}
+              >
+                <Feather name="phone" size={14} color="#fff" />
+              </Pressable>
+              <Pressable
+                onPress={() => removeEmergencyContact(ec.id)}
+                hitSlop={10}
+                style={[styles.smallBtn, { backgroundColor: c.muted, marginLeft: 6 }]}
+              >
+                <Feather name="trash-2" size={14} color={c.foreground} />
+              </Pressable>
+            </View>
+          ))}
+          {showAdd ? (
+            <View style={{ gap: 10, marginTop: 10 }}>
+              <TextInput
+                value={cName}
+                onChangeText={setCName}
+                placeholder={t("contactName")}
+                placeholderTextColor={c.mutedForeground}
+                style={[
+                  styles.input,
+                  { color: c.foreground, borderColor: c.border, backgroundColor: c.background },
+                ]}
+              />
+              <TextInput
+                value={cPhone}
+                onChangeText={setCPhone}
+                placeholder={t("contactPhone")}
+                placeholderTextColor={c.mutedForeground}
+                keyboardType="phone-pad"
+                style={[
+                  styles.input,
+                  { color: c.foreground, borderColor: c.border, backgroundColor: c.background },
+                ]}
+              />
+              <TextInput
+                value={cRel}
+                onChangeText={setCRel}
+                placeholder={t("contactRelation")}
+                placeholderTextColor={c.mutedForeground}
+                style={[
+                  styles.input,
+                  { color: c.foreground, borderColor: c.border, backgroundColor: c.background },
+                ]}
+              />
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Pressable
+                  onPress={() => {
+                    setShowAdd(false);
+                    setCName("");
+                    setCPhone("");
+                    setCRel("");
+                  }}
+                  style={[
+                    styles.ghostBtn,
+                    { borderColor: c.border, borderRadius: c.radius, flex: 1 },
+                  ]}
+                >
+                  <Text style={[styles.ghostBtnText, { color: c.foreground }]}>
+                    {t("cancel")}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={saveContact}
+                  disabled={!cName.trim() || !cPhone.trim()}
+                  style={[
+                    styles.solidBtn,
+                    {
+                      backgroundColor: c.accent,
+                      borderRadius: c.radius,
+                      flex: 1,
+                      opacity: !cName.trim() || !cPhone.trim() ? 0.5 : 1,
+                    },
+                  ]}
+                >
+                  <Feather name="check" size={14} color="#fff" />
+                  <Text style={styles.solidBtnText}>{t("saveContact")}</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setShowAdd(true)}
+              style={[
+                styles.addBtn,
+                {
+                  borderColor: c.accent,
+                  borderRadius: c.radius,
+                  marginTop: contacts.length > 0 ? 12 : 0,
+                },
+              ]}
+            >
+              <Feather name="plus" size={16} color={c.accent} />
+              <Text style={[styles.addBtnText, { color: c.accent }]}>
+                {t("addContact")}
+              </Text>
+            </Pressable>
+          )}
         </Card>
 
         <Card>
@@ -372,4 +530,63 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  hint: { fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 17 },
+  empty: { fontFamily: "Inter_400Regular", fontSize: 13, fontStyle: "italic" },
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+  },
+  contactAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contactAvatarText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 14 },
+  contactName: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  contactMeta: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 1 },
+  smallBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  input: {
+    minHeight: 48,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderRadius: 12,
+    fontFamily: "Inter_500Medium",
+    fontSize: 15,
+  },
+  addBtn: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+  },
+  addBtnText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  ghostBtn: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  ghostBtnText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  solidBtn: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  solidBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 14 },
 });

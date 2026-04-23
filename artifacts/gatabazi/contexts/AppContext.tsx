@@ -20,6 +20,13 @@ export type Permissions = {
   notifications: boolean;
 };
 
+export type EmergencyContact = {
+  id: string;
+  name: string;
+  phone: string;
+  relation: string;
+};
+
 export type UserProfile = {
   name: string;
   phone: string;
@@ -27,6 +34,7 @@ export type UserProfile = {
   bloodType: string;
   allergies: string;
   emergencyContact: string;
+  emergencyContacts: EmergencyContact[];
   credentialUploaded: boolean;
 };
 
@@ -47,6 +55,8 @@ type Ctx = State & {
   setAuthed: (v: boolean) => void;
   setPermissions: (p: Partial<Permissions>) => void;
   setProfile: (p: Partial<UserProfile>) => void;
+  addEmergencyContact: (c: Omit<EmergencyContact, "id">) => void;
+  removeEmergencyContact: (id: string) => void;
   t: (key: Parameters<typeof translate>[1]) => string;
   signOut: () => void;
 };
@@ -58,6 +68,7 @@ const DEFAULT_PROFILE: UserProfile = {
   bloodType: "O+",
   allergies: "",
   emergencyContact: "",
+  emergencyContacts: [],
   credentialUploaded: false,
 };
 
@@ -170,6 +181,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     [persist],
   );
+  const addEmergencyContact = useCallback(
+    (c: Omit<EmergencyContact, "id">) => {
+      setProfileState((prev) => {
+        const newContact: EmergencyContact = {
+          ...c,
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        };
+        const next = {
+          ...prev,
+          emergencyContacts: [...(prev.emergencyContacts || []), newContact],
+        };
+        persist({ profile: next });
+        return next;
+      });
+    },
+    [persist],
+  );
+  const removeEmergencyContact = useCallback(
+    (id: string) => {
+      setProfileState((prev) => {
+        const next = {
+          ...prev,
+          emergencyContacts: (prev.emergencyContacts || []).filter(
+            (c) => c.id !== id,
+          ),
+        };
+        persist({ profile: next });
+        return next;
+      });
+    },
+    [persist],
+  );
   const signOut = useCallback(() => {
     setAuthedState(false);
     setProfileState(DEFAULT_PROFILE);
@@ -197,6 +240,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAuthed,
       setPermissions,
       setProfile,
+      addEmergencyContact,
+      removeEmergencyContact,
       signOut,
       t,
     }),
@@ -214,6 +259,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAuthed,
       setPermissions,
       setProfile,
+      addEmergencyContact,
+      removeEmergencyContact,
       signOut,
       t,
     ],

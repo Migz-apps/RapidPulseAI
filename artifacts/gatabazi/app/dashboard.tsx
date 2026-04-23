@@ -127,6 +127,32 @@ export default function Dashboard() {
           />
         </Pressable>
 
+        <Pressable onPress={() => router.push("/triage")}>
+          <Card
+            style={{
+              marginBottom: 16,
+              borderColor: c.accent,
+              borderWidth: 1.5,
+              backgroundColor: c.accent,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+              <View style={[styles.triageIcon]}>
+                <Feather name="camera" size={22} color={c.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.triageTitle]}>
+                  {t("aiTriageCard")}
+                </Text>
+                <Text style={[styles.triageBody]}>
+                  {t("aiTriageCardBody")}
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={22} color="#fff" />
+            </View>
+          </Card>
+        </Pressable>
+
         <Text style={[styles.section, { color: c.foreground }]}>
           {t("nearbyMap")}
         </Text>
@@ -360,4 +386,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   tipText: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 18 },
+  triageIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  triageTitle: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 15,
+    color: "#fff",
+  },
+  triageBody: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.9)",
+    marginTop: 2,
+    lineHeight: 16,
+  },
 });
