@@ -197,7 +197,7 @@ export default function Launchpad() {
             <Text style={[styles.joinSub, { color: c.mutedForeground }]}>
               {isAuthed
                 ? t("signedIn")
-                : "Verified responders. Real-time location. Multilingual triage."}
+                : t("signInPitch")}
             </Text>
             <View style={{ height: 16 }} />
             <PrimaryButton

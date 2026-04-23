@@ -13,21 +13,20 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Card, LangSwitcher } from "@/components/Brand";
+import { CityMap, type MapPin } from "@/components/CityMap";
 import { LanguageSheet } from "@/components/LanguageSheet";
 import { SosPulse } from "@/components/SosPulse";
 import { useApp } from "@/contexts/AppContext";
 import { useColors } from "@/hooks/useColors";
 
-const NEARBY_INCIDENTS = [
-  { id: "i1", label: "Fall reported", area: "Nyamirambo", mins: 4, color: "warning" as const },
-  { id: "i2", label: "Cardiac assist", area: "Kicukiro", mins: 12, color: "primary" as const },
-  { id: "i3", label: "Severe bleeding", area: "Kimironko", mins: 27, color: "primary" as const },
-];
-
-const SAFE_TIPS = [
-  "Keep your phone above 20% — silent SOS still works at low battery.",
-  "Save your blood type in Settings so the Handshake can share it instantly.",
-  "Calm panic by breathing 4 in, 6 out — then start AI Triage.",
+const MAP_PINS: MapPin[] = [
+  { id: "you", name: "", kind: "you", x: 0.46, y: 0.55 },
+  { id: "p1", name: "Remera Police", kind: "police", x: 0.74, y: 0.32 },
+  { id: "p2", name: "Nyamirambo Police", kind: "police", x: 0.18, y: 0.72 },
+  { id: "p3", name: "Kacyiru Police", kind: "police", x: 0.55, y: 0.18 },
+  { id: "h1", name: "King Faisal Hospital", kind: "hospital", x: 0.78, y: 0.6 },
+  { id: "h2", name: "CHUK", kind: "hospital", x: 0.32, y: 0.32 },
+  { id: "h3", name: "Kibagabaga Hospital", kind: "hospital", x: 0.62, y: 0.78 },
 ];
 
 export default function Dashboard() {
@@ -38,12 +37,28 @@ export default function Dashboard() {
   const [langOpen, setLangOpen] = useState(false);
   const topInset = isWeb ? Math.max(insets.top, 67) : insets.top + 8;
 
+  const NEARBY_INCIDENTS = [
+    { id: "i1", label: t("fireReported"), area: "Nyamirambo", mins: 4, color: "warning" as const },
+    { id: "i2", label: t("accidentReported"), area: "Kicukiro", mins: 12, color: "primary" as const },
+    { id: "i3", label: t("fireReported"), area: "Kimironko", mins: 27, color: "primary" as const },
+  ];
+
+  const TIPS = [t("tip1"), t("tip2"), t("tip3")];
+
+  const goToPin = (pin: MapPin) => {
+    if (pin.kind === "you") return;
+    router.push({
+      pathname: "/incident",
+      params: { destName: pin.name, destKind: pin.kind },
+    });
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <View style={[styles.header, { paddingTop: topInset }]}>
         <View>
           <Text style={[styles.hi, { color: c.mutedForeground }]}>
-            Hi{profile.name ? `, ${profile.name.split(" ")[0]}` : ""}
+            {t("hi")}{profile.name ? `, ${profile.name.split(" ")[0]}` : ""}
           </Text>
           <Text style={[styles.brand, { color: c.foreground }]}>
             {t("appName")}
@@ -57,7 +72,7 @@ export default function Dashboard() {
               styles.iconBtn,
               { backgroundColor: c.card, borderColor: c.border },
             ]}
-            accessibilityLabel="Settings"
+            accessibilityLabel={t("settings")}
           >
             <Feather name="settings" size={16} color={c.foreground} />
           </Pressable>
@@ -84,7 +99,8 @@ export default function Dashboard() {
           />
         </View>
 
-        <View
+        <Pressable
+          onPress={() => setSilentSos(!silentSos)}
           style={[
             styles.silentRow,
             { backgroundColor: c.card, borderColor: c.border, borderRadius: 999 },
@@ -109,15 +125,20 @@ export default function Dashboard() {
             thumbColor={silentSos ? c.warning : c.background}
             trackColor={{ false: c.border, true: "rgba(255,183,3,0.45)" }}
           />
-        </View>
+        </Pressable>
 
         <Text style={[styles.section, { color: c.foreground }]}>
-          {t("heroFeed")}
+          {t("nearbyMap")}
+        </Text>
+        <Text style={[styles.sectionSub, { color: c.mutedForeground }]}>
+          {t("nearbyMapHint")}
         </Text>
 
+        <View style={{ height: 10 }} />
+        <CityMap pins={MAP_PINS} onPinPress={goToPin} height={260} />
+
+        <View style={{ height: 18 }} />
         <View style={styles.statsRow}>
-          <Stat label={t("responders")} value="14" tone="accent" icon="users" />
-          <Stat label={t("averageEta")} value="6m" tone="secondary" icon="clock" />
           <Stat label={t("incidents24h")} value="9" tone="primary" icon="activity" />
         </View>
 
@@ -125,7 +146,7 @@ export default function Dashboard() {
           <View style={styles.cardHead}>
             <Feather name="map-pin" size={16} color={c.foreground} />
             <Text style={[styles.cardTitle, { color: c.foreground }]}>
-              Nearby activity
+              {t("nearbyActivity")}
             </Text>
           </View>
           {NEARBY_INCIDENTS.map((i, idx) => (
@@ -165,12 +186,11 @@ export default function Dashboard() {
               <View style={styles.cardHead}>
                 <Feather name="radio" size={16} color={c.accent} />
                 <Text style={[styles.cardTitle, { color: c.foreground }]}>
-                  Volunteer beacon
+                  {t("volunteerBeacon")}
                 </Text>
               </View>
               <Text style={[styles.bodyText, { color: c.mutedForeground }]}>
-                You're listed as a Life-Saver. Tap to preview the Go/No-Go alert that
-                arrives when an SOS is triggered nearby.
+                {t("volunteerBeaconBody")}
               </Text>
             </Card>
           </Pressable>
@@ -180,10 +200,10 @@ export default function Dashboard() {
           <View style={styles.cardHead}>
             <Feather name="book-open" size={16} color={c.foreground} />
             <Text style={[styles.cardTitle, { color: c.foreground }]}>
-              Tips for the next 60 seconds
+              {t("tipsTitle")}
             </Text>
           </View>
-          {SAFE_TIPS.map((tip, idx) => (
+          {TIPS.map((tip, idx) => (
             <View key={idx} style={styles.tipRow}>
               <View
                 style={[
@@ -284,7 +304,11 @@ const styles = StyleSheet.create({
   section: {
     fontFamily: "Inter_700Bold",
     fontSize: 18,
-    marginBottom: 10,
+  },
+  sectionSub: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    marginTop: 2,
   },
   statsRow: { flexDirection: "row", gap: 10 },
   stat: {

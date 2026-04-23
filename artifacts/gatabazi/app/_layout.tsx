@@ -16,7 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider } from "@/contexts/AppContext";
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient();
 
@@ -50,12 +50,15 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    const safety = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 1500);
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {});
+      clearTimeout(safety);
     }
+    return () => clearTimeout(safety);
   }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) return null;
 
   return (
     <SafeAreaProvider>

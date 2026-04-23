@@ -110,10 +110,10 @@ export default function Triage() {
             />
             <Text style={styles.viewfinderText}>
               {phase === "capture"
-                ? "Center the scene"
+                ? t("centerScene")
                 : phase === "analyzing"
                   ? t("analyzing")
-                  : "Scene assessed"}
+                  : t("sceneAssessed")}
             </Text>
           </View>
         </View>
@@ -142,7 +142,7 @@ export default function Triage() {
               {t("aiInstructions")}
             </Text>
             <Text style={[styles.sectionSub, { color: c.mutedForeground }]}>
-              Translated for you in {language.toUpperCase()}.
+              {t("translatedFor")} {language.toUpperCase()}.
             </Text>
             <View style={{ height: 12 }} />
             {steps.map((s, idx) => (
@@ -167,7 +167,7 @@ export default function Triage() {
             <PrimaryButton
               variant="ghost"
               icon="rotate-ccw"
-              label="Re-analyze"
+              label={t("reAnalyze")}
               onPress={() => setPhase("capture")}
             />
           </View>

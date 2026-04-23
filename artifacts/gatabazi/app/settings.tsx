@@ -75,7 +75,7 @@ export default function Settings() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.name, { color: c.foreground }]}>
-                {profile.name || (isAuthed ? "Gatabazi user" : t("notSignedIn"))}
+                {profile.name || (isAuthed ? t("defaultUser") : t("notSignedIn"))}
               </Text>
               <Text style={[styles.meta, { color: c.mutedForeground }]}>
                 {profile.phone || "—"} · {profile.role === "lifesaver" ? t("lifeSaver") : t("citizen")}
@@ -87,7 +87,7 @@ export default function Settings() {
               <Badge label={t("signedIn")} icon="check-circle" tone="accent" />
             ) : null}
             {profile.role === "lifesaver" && profile.credentialUploaded ? (
-              <Badge label="Credential verified" icon="award" tone="secondary" />
+              <Badge label={t("credentialVerified")} icon="award" tone="secondary" />
             ) : null}
             {profile.bloodType ? (
               <Badge label={`${t("bloodType")} ${profile.bloodType}`} icon="droplet" tone="primary" />
@@ -183,7 +183,7 @@ export default function Settings() {
           <PrimaryButton
             variant="ghost"
             icon="log-out"
-            label="Sign out"
+            label={t("signOut")}
             onPress={() => {
               signOut();
               router.replace("/");

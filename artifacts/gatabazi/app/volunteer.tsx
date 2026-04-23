@@ -57,7 +57,7 @@ export default function Volunteer() {
         >
           <Feather name="chevron-down" size={18} color={c.foreground} />
         </Pressable>
-        <Text style={[styles.priority, { color: c.primary }]}>HIGH PRIORITY</Text>
+        <Text style={[styles.priority, { color: c.primary }]}>{t("highPriority")}</Text>
         <View style={{ width: 34 }} />
       </View>
 
@@ -109,7 +109,7 @@ export default function Volunteer() {
           <View style={[styles.divider, { backgroundColor: c.border }]} />
           <Meta label={t("distance")} value={CALL.distance} icon="map-pin" tone="secondary" />
           <View style={[styles.divider, { backgroundColor: c.border }]} />
-          <Meta label="ETA" value={CALL.eta} icon="clock" tone="accent" />
+          <Meta label={t("averageEta")} value={CALL.eta} icon="clock" tone="accent" />
         </View>
       </View>
 

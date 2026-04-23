@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -70,6 +71,11 @@ export default function Register() {
 
   const stepIndex = ["phone", "role", "permissions", "profile"].indexOf(step);
   const topInset = isWeb ? Math.max(insets.top, 67) : insets.top + 8;
+  const allPermsOn =
+    permissions.location &&
+    permissions.camera &&
+    permissions.network &&
+    permissions.notifications;
 
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
@@ -98,12 +104,18 @@ export default function Register() {
         <View style={{ width: 34 }} />
       </View>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={20}
+      >
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingBottom: Math.max(insets.bottom, isWeb ? 40 : 24) + 100 },
+          { paddingBottom: Math.max(insets.bottom, isWeb ? 40 : 24) + 180 },
         ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {step === "phone" ? (
           <View>
@@ -111,7 +123,7 @@ export default function Register() {
               {t("phoneNumber")}
             </Text>
             <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
-              We verify silently using your SIM. No codes to type.
+              {t("phoneSubtitle")}
             </Text>
             <Card style={{ marginTop: 16 }}>
               <View style={styles.phoneRow}>
@@ -138,7 +150,7 @@ export default function Register() {
                   ? t("verifyingNumber")
                   : verified
                     ? t("numberVerified")
-                    : "Enter your phone number to continue."}
+                    : t("enterPhone")}
               </Text>
             </Card>
           </View>
@@ -150,7 +162,7 @@ export default function Register() {
               {t("chooseRole")}
             </Text>
             <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
-              You can switch your role later in Settings.
+              {t("roleSubtitle")}
             </Text>
             <View style={{ height: 16 }} />
             <RoleCard
@@ -199,7 +211,7 @@ export default function Register() {
                   >
                     {credUploaded
                       ? t("credentialUploaded")
-                      : "Tap to upload medical license"}
+                      : t("uploadHint")}
                   </Text>
                 </Pressable>
               </Card>
@@ -253,7 +265,7 @@ export default function Register() {
               {t("profile")}
             </Text>
             <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
-              Shared via the Blood-Type Handshake to nearby responders.
+              {t("profileSubtitle")}
             </Text>
             <View style={{ height: 16 }} />
             <FieldInput
@@ -310,6 +322,7 @@ export default function Register() {
           </View>
         ) : null}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <View
         style={[
@@ -338,11 +351,19 @@ export default function Register() {
           />
         ) : null}
         {step === "permissions" ? (
-          <PrimaryButton
-            label={t("continue")}
-            icon="arrow-right"
-            onPress={() => setStep("profile")}
-          />
+          <>
+            {!allPermsOn ? (
+              <Text style={[styles.helper, { color: c.primary, textAlign: "center", marginBottom: 8 }]}>
+                {t("permissionsRequired")}
+              </Text>
+            ) : null}
+            <PrimaryButton
+              label={t("continue")}
+              icon="arrow-right"
+              disabled={!allPermsOn}
+              onPress={() => setStep("profile")}
+            />
+          </>
         ) : null}
         {step === "profile" ? (
           <PrimaryButton label={t("finish")} icon="check" onPress={finish} />

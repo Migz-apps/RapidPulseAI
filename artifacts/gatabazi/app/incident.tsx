@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/contexts/AppContext";
 import { useColors } from "@/hooks/useColors";
 
-const HOSPITAL = {
+const DEFAULT_DEST = {
   name: "King Faisal Hospital",
   distance: "2.3 km",
   eta: "6 min",
@@ -46,6 +46,10 @@ export default function Incident() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const { t, silentSos } = useApp();
+  const params = useLocalSearchParams<{ destName?: string; destKind?: string }>();
+  const destName = (params.destName as string) || DEFAULT_DEST.name;
+  const destKind = (params.destKind as string) || "hospital";
+  const HOSPITAL = { ...DEFAULT_DEST, name: destName };
 
   const [showHandshake, setShowHandshake] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -186,13 +190,22 @@ export default function Incident() {
             <View style={[styles.markerInner, { borderColor: "#fff" }]} />
           </Animated.View>
 
-          <View style={[styles.hospitalMarker, { backgroundColor: c.accent }]}>
-            <Feather name="plus" size={14} color="#fff" />
+          <View
+            style={[
+              styles.hospitalMarker,
+              { backgroundColor: destKind === "police" ? c.secondary : c.accent },
+            ]}
+          >
+            <Feather
+              name={destKind === "police" ? "shield" : "plus"}
+              size={14}
+              color="#fff"
+            />
           </View>
 
           <View style={[styles.youPill, { backgroundColor: c.foreground }]}>
             <Text style={[styles.youPillText, { color: c.background }]}>
-              {t("you") || "You"}
+              {t("you")}
             </Text>
           </View>
           <View style={[styles.hospitalPill, { backgroundColor: c.accent }]}>
@@ -217,7 +230,7 @@ export default function Incident() {
 
           <View style={{ height: 14 }} />
           <Text style={[styles.routeHeader, { color: c.foreground }]}>
-            {t("openInMaps") || "Directions"}
+            {t("openInMaps")}
           </Text>
           <View style={{ height: 6 }} />
           {ROUTE_STEPS.map((s, i) => (
